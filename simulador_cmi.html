@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador CMI — Netflix · Uber · Starbucks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #6b6a64;
+    --text3: #a8a79f;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --green: #3B6D11; --green-bg: #EAF3DE;
+    --blue: #185FA5; --blue-bg: #E6F1FB;
+    --amber: #854F0B; --amber-bg: #FAEEDA;
+    --purple: #534AB7; --purple-bg: #EEEDFE;
+    --pos: #27500A; --pos-bg: #EAF3DE;
+    --neg: #791F1F; --neg-bg: #FCEBEB;
+    --neu: #444441; --neu-bg: #F1EFE8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --surface: #242422; --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+      --text: #e8e7e0; --text2: #9a9990; --text3: #5a5955;
+      --green: #97C459; --green-bg: #173404;
+      --blue: #85B7EB; --blue-bg: #042C53;
+      --amber: #EF9F27; --amber-bg: #412402;
+      --purple: #AFA9EC; --purple-bg: #26215C;
+      --pos: #C0DD97; --pos-bg: #173404;
+      --neg: #F09595; --neg-bg: #501313;
+      --neu: #B4B2A9; --neu-bg: #2C2C2A;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+  .page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--text3);
+  }
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+  .app {
+    width: 100%;
+    max-width: 680px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .company-badge {
+    font-size: 13px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .quarter-badge {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .scorecard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .sc-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+  .sc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .sc-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .sc-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .sc-metrics { display: flex; flex-direction: column; gap: 5px; }
+  .sc-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .sc-metric-name { color: var(--text2); }
+  .sc-metric-val { font-weight: 500; font-size: 13px; color: var(--text); }
+  .bar-wrap {
+    width: 60px; height: 5px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 6px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .5s ease;
+  }
+  .decision-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .decisions-grid { display: flex; flex-direction: column; gap: 7px; }
+  .dec-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .dec-card:hover { background: var(--surface2); border-color: var(--border2); }
+  .dec-card.selected { border: 1.5px solid #378ADD; background: var(--blue-bg); }
+  .dec-card.selected .dec-name { color: var(--blue); }
+  .dec-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .dec-desc { font-size: 12px; color: var(--text2); line-height: 1.45; }
+  .dec-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .dec-tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; }
+  .apply-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: transparent;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .apply-btn:hover:not(:disabled) { background: var(--surface2); }
+  .apply-btn:disabled { opacity: 0.4; cursor: default; }
+  .feedback-box {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .feedback-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feedback-body { font-size: 12px; color: var(--text2); line-height: 1.55; }
+  .deltas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .delta-pill { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+  .delta-pos { background: var(--pos-bg); color: var(--pos); }
+  .delta-neg { background: var(--neg-bg); color: var(--neg); }
+  .event-box {
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin-bottom: 12px;
+  }
+  .game-over { text-align: center; padding: 2rem 1rem; }
+  .game-over-title { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .score-big { font-size: 52px; font-weight: 500; color: var(--text); margin-bottom: 2px; font-family: 'DM Mono', monospace; }
+  .score-label { font-size: 13px; color: var(--text2); margin-bottom: 18px; }
+  .game-over-sub { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    background: transparent;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .sel-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .15s, background .15s;
+  }
+  .sel-card:hover { background: var(--surface2); border-color: var(--border2); }
+  .sel-name { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
+  .sel-desc { font-size: 11px; color: var(--text2); line-height: 1.45; }
+  .sel-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 14px; text-align: center; }
+  .hint { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; }
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 10px;
+    display: block;
+    margin-left: auto;
+  }
+  .back-btn:hover { color: var(--text2); }
+  @media (max-width: 500px) {
+    .scorecard { grid-template-columns: 1fr; }
+    .selector-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">Simulador de Cuadro de Mando Integral</div>
+  <div class="page-sub">Toma decisiones como CEO y observa el impacto en las 4 perspectivas</div>
+</div>
+
+<div class="app" id="app"></div>
+
+<script>
+const QUARTERS = 5;
+
+const PERSPECTIVES = [
+  {id:'fin',label:'Financiera',icon:'ti-coin',iconBg:'var(--green-bg)',iconColor:'var(--green)',
+   metrics:[{k:'ingresos',label:'Ingresos'},{k:'margen',label:'Margen'}]},
+  {id:'cli',label:'Clientes',icon:'ti-users',iconBg:'var(--blue-bg)',iconColor:'var(--blue)',
+   metrics:[{k:'nps',label:'NPS'},{k:'retencion',label:'Retención'}]},
+  {id:'pro',label:'Procesos',icon:'ti-settings',iconBg:'var(--amber-bg)',iconColor:'var(--amber)',
+   metrics:[{k:'calidad',label:'Calidad'},{k:'ciclo',label:'Eficiencia'}]},
+  {id:'apr',label:'Aprendizaje',icon:'ti-plant',iconBg:'var(--purple-bg)',iconColor:'var(--purple)',
+   metrics:[{k:'satisf',label:'Empleados'},{k:'formacion',label:'Talento'}]},
+];
+
+const COMPANIES = {
+  netflix:{
+    name:'Netflix', sector:'Streaming & contenido', icon:'ti-device-tv', color:'#E24B4A',
+    initMetrics:{ingresos:38,margen:17,nps:61,retencion:75,calidad:80,ciclo:70,satisf:68,formacion:55},
+    fmt:(k,v)=>({ingresos:`$${v.toFixed(1)}B`,margen:`${v.toFixed(0)}%`,nps:`${v.toFixed(0)}`,retencion:`${v.toFixed(0)}%`,calidad:`${v.toFixed(0)}%`,ciclo:`${v.toFixed(0)}%`,satisf:`${v.toFixed(0)}%`,formacion:`${v.toFixed(0)}%`}[k]),
+    events:[
+      'Disney+ y Apple TV lanzan contenido exclusivo masivo. La guerra del streaming se intensifica.',
+      'Aumenta el "password sharing": millones usan cuentas ajenas sin pagar.',
+      'Un productor estrella amenaza con irse a la competencia.',
+      'Reguladores europeos exigen 30% de contenido local en la plataforma.',
+      'Último trimestre: Wall Street vigila de cerca la retención de suscriptores.',
+    ],
+    decisions:[
+      {id:'a',name:'Producir serie original de alto presupuesto',
+       desc:'Invertir $200M en una superproducción global. Puede atraer nuevos suscriptores, pero el riesgo de fracaso es alto y comprime márgenes.',
+       tags:[{t:'Clientes ++',c:'delta-pos'},{t:'Financiera −',c:'delta-neg'},{t:'Procesos ~',c:''}],
+       delta:{ingresos:5,margen:-6,nps:16,retencion:12,calidad:8,ciclo:-4,satisf:6,formacion:4},
+       feedback:'La serie se convirtió en fenómeno global. El NPS y la retención subieron, pero el presupuesto de contenido se disparó. El margen sufrió este trimestre.'},
+      {id:'b',name:'Eliminar cuentas compartidas y cobrar extra',
+       desc:'Restringir el uso de contraseñas fuera del hogar y ofrecer membresía adicional. Genera ingresos, pero puede causar cancelaciones.',
+       tags:[{t:'Financiera ++',c:'delta-pos'},{t:'Clientes −',c:'delta-neg'},{t:'Procesos +',c:'delta-pos'}],
+       delta:{ingresos:9,margen:8,nps:-14,retencion:-10,calidad:3,ciclo:6,satisf:0,formacion:0},
+       feedback:'Los ingresos crecieron significativamente, pero la reacción en redes fue negativa. Muchos usuarios cancelaron por sentirlo injusto. La retención cayó.'},
+      {id:'c',name:'Lanzar plan con publicidad (ad-supported)',
+       desc:'Tier más barato financiado por anuncios. Amplía base de usuarios en mercados sensibles al precio, diversifica ingresos.',
+       tags:[{t:'Clientes +',c:'delta-pos'},{t:'Financiera +',c:'delta-pos'},{t:'Procesos −',c:'delta-neg'}],
+       delta:{ingresos:6,margen:4,nps:6,retencion:8,calidad:-5,ciclo:-6,satisf:-3,formacion:2},
+       feedback:'El plan básico atrajo millones de nuevos usuarios. Sin embargo, la experiencia con anuncios genera fricción y la plataforma se vuelve más compleja de operar.'},
+      {id:'d',name:'Invertir en tecnología de recomendación con IA',
+       desc:'Mejorar el algoritmo para reducir tiempo de decisión y aumentar horas de visualización por usuario.',
+       tags:[{t:'Procesos ++',c:'delta-pos'},{t:'Clientes +',c:'delta-pos'},{t:'Aprendizaje +',c:'delta-pos'}],
+       delta:{ingresos:3,margen:2,nps:10,retencion:9,calidad:12,ciclo:14,satisf:8,formacion:12},
+       feedback:'El nuevo algoritmo redujo el "¿qué veo hoy?" y aumentó el tiempo en la plataforma. Un ejemplo claro de aprendizaje que impacta clientes.'},
+      {id:'e',name:'Expandir catálogo de contenido local por región',
+       desc:'Coproducir series en Latinoamérica, Corea y Europa. Reduce dependencia de Hollywood y cumple regulaciones locales.',
+       tags:[{t:'Clientes +',c:'delta-pos'},{t:'Aprendizaje +',c:'delta-pos'},{t:'Financiera ~',c:''}],
+       delta:{ingresos:2,margen:-2,nps:11,retencion:7,calidad:6,ciclo:4,satisf:10,formacion:9},
+       feedback:'El contenido local resonó fuerte en cada mercado. La diversidad del catálogo se convirtió en una ventaja competitiva difícil de replicar.'},
+    ]
+  },
+  uber:{
+    name:'Uber', sector:'Plataforma de movilidad', icon:'ti-car', color:'#2C2C2A',
+    initMetrics:{ingresos:22,margen:8,nps:38,retencion:58,calidad:70,ciclo:55,satisf:45,formacion:20},
+    fmt:(k,v)=>({ingresos:`$${v.toFixed(1)}B`,margen:`${v.toFixed(0)}%`,nps:`${v.toFixed(0)}`,retencion:`${v.toFixed(0)}%`,calidad:`${v.toFixed(0)}%`,ciclo:`${v.toFixed(0)}%`,satisf:`${v.toFixed(0)}%`,formacion:`${v.toFixed(0)}%`}[k]),
+    events:[
+      'Protestas de conductores por tarifas bajas. La prensa te observa.',
+      'Nuevo competidor local entra al mercado con precios agresivos.',
+      'Ciudad clave amenaza con regular el surge pricing.',
+      'Accidente mediático involucra a un conductor de la plataforma.',
+      'Regulador exige clasificar conductores como empleados formales.',
+    ],
+    decisions:[
+      {id:'a',name:'Subir tarifas a conductores',
+       desc:'Aumentar el porcentaje que reciben los conductores. Mejora su satisfacción y atrae más oferta, pero comprime márgenes.',
+       tags:[{t:'Aprendizaje +',c:'delta-pos'},{t:'Clientes +',c:'delta-pos'},{t:'Financiera −',c:'delta-neg'}],
+       delta:{ingresos:-2,margen:-5,nps:10,retencion:8,calidad:8,ciclo:6,satisf:18,formacion:0},
+       feedback:'Los conductores están más motivados: menos cancelaciones y mejor servicio. Los márgenes sufrieron, pero la plataforma se volvió más confiable.'},
+      {id:'b',name:'Lanzar Uber Premium en nuevas ciudades',
+       desc:'Expandir categoría de alto valor. Más ingresos por viaje, atrae usuarios exigentes, pero requiere conductores especializados.',
+       tags:[{t:'Financiera ++',c:'delta-pos'},{t:'Clientes +',c:'delta-pos'},{t:'Procesos −',c:'delta-neg'}],
+       delta:{ingresos:8,margen:6,nps:7,retencion:4,calidad:-4,ciclo:-5,satisf:-5,formacion:8},
+       feedback:'El segmento premium creció. Sin embargo, los conductores regulares sienten presión por los nuevos estándares exigidos.'},
+      {id:'c',name:'Invertir en verificación y seguridad',
+       desc:'Mejores filtros de conductores, seguro ampliado y botón de emergencia. Reduce incidentes y mejora confianza.',
+       tags:[{t:'Clientes ++',c:'delta-pos'},{t:'Procesos +',c:'delta-pos'},{t:'Financiera −',c:'delta-neg'}],
+       delta:{ingresos:-1,margen:-4,nps:16,retencion:12,calidad:12,ciclo:4,satisf:6,formacion:10},
+       feedback:'Los usuarios confían más en la plataforma. Los incidentes bajaron y el NPS subió considerablemente. Una inversión que vale la pena.'},
+      {id:'d',name:'Optimizar algoritmo de surge pricing',
+       desc:'Precios dinámicos más agresivos en horas pico. Maximiza ingresos pero genera fricción con usuarios y reguladores.',
+       tags:[{t:'Financiera ++',c:'delta-pos'},{t:'Clientes −',c:'delta-neg'},{t:'Procesos +',c:'delta-pos'}],
+       delta:{ingresos:10,margen:9,nps:-12,retencion:-8,calidad:3,ciclo:8,satisf:2,formacion:0},
+       feedback:'Los ingresos en horas pico dispararon. Pero los usuarios se quejan del precio y algunos migran a la competencia. Relación regulatoria más tensa.'},
+      {id:'e',name:'Programa de capacitación para conductores',
+       desc:'Cursos de atención al cliente, manejo seguro y uso de la app. Mejora calidad del servicio a mediano plazo.',
+       tags:[{t:'Aprendizaje ++',c:'delta-pos'},{t:'Clientes +',c:'delta-pos'},{t:'Financiera ~',c:''}],
+       delta:{ingresos:1,margen:-2,nps:8,retencion:5,calidad:10,ciclo:5,satisf:14,formacion:16},
+       feedback:'Los conductores se sienten más profesionales y los usuarios lo notan. Una inversión en la base de la plataforma que da frutos sostenibles.'},
+    ]
+  },
+  starbucks:{
+    name:'Starbucks', sector:'Retail de café', icon:'ti-coffee', color:'#0F6E56',
+    initMetrics:{ingresos:18,margen:15,nps:55,retencion:68,calidad:82,ciclo:65,satisf:60,formacion:40},
+    fmt:(k,v)=>({ingresos:`$${v.toFixed(1)}B`,margen:`${v.toFixed(0)}%`,nps:`${v.toFixed(0)}`,retencion:`${v.toFixed(0)}%`,calidad:`${v.toFixed(0)}%`,ciclo:`${v.toFixed(0)}%`,satisf:`${v.toFixed(0)}%`,formacion:`${v.toFixed(0)}%`}[k]),
+    events:[
+      'Competidor lanza café de especialidad a mitad de precio.',
+      'Viral en redes: clientes se quejan de tiempos de espera largos.',
+      'Oportunidad de abrir 200 nuevas tiendas en Latinoamérica.',
+      'Sindicato de baristas exige mejores condiciones y salarios.',
+      'Tendencia: consumidores buscan marcas con propósito ambiental.',
+    ],
+    decisions:[
+      {id:'a',name:'Lanzar nueva línea de bebidas de temporada',
+       desc:'Colección exclusiva con ingredientes premium. Genera expectativa, impulsa visitas y aumenta ticket promedio.',
+       tags:[{t:'Clientes ++',c:'delta-pos'},{t:'Financiera +',c:'delta-pos'},{t:'Procesos −',c:'delta-neg'}],
+       delta:{ingresos:6,margen:3,nps:12,retencion:8,calidad:-3,ciclo:-6,satisf:-4,formacion:4},
+       feedback:'La nueva colección fue un éxito en redes. Las tiendas se llenaron pero los baristas sufrieron la presión operativa. Planifica mejor el próximo lanzamiento.'},
+      {id:'b',name:'Mejorar programa de lealtad (Stars)',
+       desc:'Más beneficios en la app, personalización de recompensas y ofertas exclusivas para miembros frecuentes.',
+       tags:[{t:'Clientes ++',c:'delta-pos'},{t:'Financiera +',c:'delta-pos'},{t:'Procesos ~',c:''}],
+       delta:{ingresos:4,margen:2,nps:14,retencion:14,calidad:2,ciclo:3,satisf:3,formacion:2},
+       feedback:'El programa de lealtad disparó la retención. Los clientes frecuentes gastan más y los datos permiten personalizar mejor las ofertas.'},
+      {id:'c',name:'Invertir en bienestar de baristas',
+       desc:'Más horas de formación, seguro médico ampliado y horarios flexibles. Reduce rotación y mejora el servicio.',
+       tags:[{t:'Aprendizaje ++',c:'delta-pos'},{t:'Clientes +',c:'delta-pos'},{t:'Financiera −',c:'delta-neg'}],
+       delta:{ingresos:-1,margen:-4,nps:8,retencion:5,calidad:6,ciclo:8,satisf:20,formacion:18},
+       feedback:'Los baristas más motivados lo transmiten en el servicio. La rotación bajó significativamente, reduciendo costos de contratación a largo plazo.'},
+      {id:'d',name:'Apertura acelerada de nuevas tiendas',
+       desc:'Abrir 200 locales en mercados nuevos. Crecimiento de ingresos agresivo, pero exige mucho a operaciones y equipo.',
+       tags:[{t:'Financiera ++',c:'delta-pos'},{t:'Procesos −',c:'delta-neg'},{t:'Aprendizaje −',c:'delta-neg'}],
+       delta:{ingresos:12,margen:1,nps:-5,retencion:-6,calidad:-8,ciclo:-10,satisf:-10,formacion:-5},
+       feedback:'Los ingresos crecieron mucho, pero la experiencia en tiendas nuevas es inconsistente. Los clientes en mercados maduros notan la distracción.'},
+      {id:'e',name:'Programa de sostenibilidad ambiental',
+       desc:'Vasos reutilizables, café de origen responsable y reducción de plásticos. Mejora imagen de marca y atrae nuevos clientes.',
+       tags:[{t:'Clientes +',c:'delta-pos'},{t:'Aprendizaje +',c:'delta-pos'},{t:'Financiera ~',c:''}],
+       delta:{ingresos:2,margen:-1,nps:10,retencion:6,calidad:4,ciclo:2,satisf:10,formacion:6},
+       feedback:'La iniciativa resonó fuerte en redes y prensa. Clientes jóvenes se identifican más con la marca. El impacto financiero es moderado pero la imagen gana mucho.'},
+    ]
+  }
+};
+
+let state = null;
+
+function initState(k){
+  return {companyKey:k,quarter:1,selected:null,lastDelta:null,lastDecision:null,metrics:{...COMPANIES[k].initMetrics},done:false};
+}
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
+function metricPct(k,v){
+  const mx={ingresos:80,margen:60,nps:90,retencion:100,calidad:100,ciclo:100,satisf:100,formacion:100};
+  const mn={ingresos:0,margen:-20,nps:-10,retencion:0,calidad:0,ciclo:0,satisf:0,formacion:0};
+  return Math.round(((v-mn[k])/(mx[k]-mn[k]))*100);
+}
+function barColor(p){return p>=68?'#639922':p>=38?'#BA7517':'#A32D2D';}
+function metricScore(){
+  const m=state.metrics;
+  return Math.round(['ingresos','margen','nps','retencion','calidad','ciclo','satisf','formacion'].map(k=>metricPct(k,m[k])).reduce((a,b)=>a+b,0)/8);
+}
+function applyDecision(){
+  if(!state.selected)return;
+  const co=COMPANIES[state.companyKey];
+  const dec=co.decisions.find(d=>d.id===state.selected);
+  const prev={...state.metrics};
+  for(const k in dec.delta) state.metrics[k]=clamp(state.metrics[k]+dec.delta[k],k==='margen'?-20:0,k==='ingresos'?90:k==='nps'?90:100);
+  state.lastDelta={};
+  for(const k in dec.delta) state.lastDelta[k]=state.metrics[k]-prev[k];
+  state.lastDecision=dec;
+  if(state.quarter>=QUARTERS) state.done=true; else state.quarter++;
+  state.selected=null;
+  render();
+}
+function renderScorecard(){
+  const co=COMPANIES[state.companyKey];
+  return PERSPECTIVES.map(p=>`
+    <div class="sc-card">
+      <div class="sc-card-header">
+        <div class="sc-icon" style="background:${p.iconBg};color:${p.iconColor}"><i class="ti ${p.icon}"></i></div>
+        <span class="sc-label">${p.label}</span>
+      </div>
+      <div class="sc-metrics">
+        ${p.metrics.map(m=>{
+          const v=state.metrics[m.k],pct=metricPct(m.k,v);
+          const ld=state.lastDelta?state.lastDelta[m.k]:null;
+          const dstr=ld!==null&&ld!==0?`<span style="color:${ld>0?'var(--pos)':'var(--neg)'};font-size:10px;margin-left:3px">${ld>0?'+':''}${ld.toFixed(0)}</span>`:'';
+          return `<div class="sc-metric">
+            <span class="sc-metric-name">${m.label}</span>
+            <div style="display:flex;align-items:center">
+              <span class="sc-metric-val">${co.fmt(m.k,v)}${dstr}</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${barColor(pct)}"></div></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+function renderDecisions(){
+  return COMPANIES[state.companyKey].decisions.map(d=>`
+    <div class="dec-card${state.selected===d.id?' selected':''}" onclick="selectDec('${d.id}')">
+      <div class="dec-name">${d.name}</div>
+      <div class="dec-desc">${d.desc}</div>
+      <div class="dec-tags">${d.tags.map(t=>`<span class="dec-tag ${t.c}" style="${t.c==='delta-pos'?'background:var(--pos-bg);color:var(--pos)':t.c==='delta-neg'?'background:var(--neg-bg);color:var(--neg)':'background:var(--neu-bg);color:var(--neu)'}">${t.t}</span>`).join('')}</div>
+    </div>`).join('');
+}
+function renderFeedback(){
+  if(!state.lastDecision)return '';
+  const labels={ingresos:'Ingresos',margen:'Margen',nps:'NPS',retencion:'Retención',calidad:'Calidad',ciclo:'Eficiencia',satisf:'Empleados',formacion:'Talento'};
+  const pills=Object.entries(state.lastDelta).filter(([,v])=>v!==0).map(([k,v])=>
+    `<span class="delta-pill ${v>0?'delta-pos':'delta-neg'}">${labels[k]} ${v>0?'+':''}${v.toFixed(0)}</span>`).join('');
+  return `<div class="feedback-box">
+    <div class="feedback-title"><i class="ti ti-info-circle"></i> Resultado del trimestre anterior</div>
+    <div class="feedback-body">${state.lastDecision.feedback}</div>
+    <div class="deltas">${pills}</div>
+  </div>`;
+}
+function renderGame(){
+  const co=COMPANIES[state.companyKey];
+  const ev=co.events[state.quarter-1]||'';
+  return `
+    <div class="header">
+      <span class="company-badge" style="color:${co.color};border-color:${co.color}44">
+        <i class="ti ${co.icon}" style="font-size:14px"></i>
+        ${co.name}&nbsp;<span style="color:var(--text3);font-weight:400">${co.sector}</span>
+      </span>
+      <span class="quarter-badge">T${state.quarter}/T${QUARTERS} &nbsp;·&nbsp; Puntuación: ${metricScore()}</span>
+    </div>
+    ${renderFeedback()}
+    <div class="scorecard">${renderScorecard()}</div>
+    ${ev?`<div class="event-box"><i class="ti ti-alert-triangle" style="font-size:14px;vertical-align:-2px;margin-right:5px"></i>${ev}</div>`:''}
+    <div class="decision-title">¿Qué decides este trimestre?</div>
+    <div class="decisions-grid">${renderDecisions()}</div>
+    <button class="apply-btn" onclick="applyDecision()" ${!state.selected?'disabled':''}>
+      ${state.selected?'Aplicar decisión →':'Selecciona una decisión'}
+    </button>
+    <button class="back-btn" onclick="backToSelector()">← Cambiar empresa</button>`;
+}
+function renderGameOver(){
+  const co=COMPANIES[state.companyKey];
+  const score=metricScore();
+  const grade=score>=80?'Liderazgo ejemplar':score>=65?'Buen desempeño':score>=48?'Resultado aceptable':'Empresa en riesgo';
+  const msg=score>=80?`Equilibraste brillantemente las cuatro perspectivas en ${co.name}. La estrategia está bien alineada.`:
+    score>=65?`Tomaste decisiones razonables. Algunas perspectivas quedaron rezagadas, pero la empresa sigue sólida.`:
+    score>=48?`Hay desequilibrios importantes. En ${co.name} es clave no sacrificar clientes o talento por ganancias cortoplacistas.`:
+    `Las decisiones desbalanceadas pasaron factura. El CMI existe para evitar exactamente esto.`;
+  return `<div class="game-over">
+    <div style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:${co.color};background:var(--surface2);border:0.5px solid ${co.color}44;border-radius:var(--radius-sm);padding:4px 12px;margin-bottom:16px">
+      <i class="ti ${co.icon}" style="font-size:14px"></i>${co.name}
+    </div>
+    <div class="game-over-title">${grade}</div>
+    <div class="score-big">${score}</div>
+    <div class="score-label">puntuación CMI (sobre 100)</div>
+    <div class="game-over-sub">${msg}</div>
+    <div class="btn-row">
+      <button class="btn" onclick="restartSame()">Reintentar con ${co.name} ↺</button>
+      <button class="btn" onclick="backToSelector()">Probar otra empresa →</button>
+    </div>
+  </div>`;
+}
+function renderSelector(){
+  const cos=[
+    {key:'netflix',icon:'ti-device-tv',color:'#E24B4A',name:'Netflix',desc:'Streaming global. Contenido, algoritmos y la guerra por suscriptores.'},
+    {key:'uber',icon:'ti-car',color:'#2C2C2A',name:'Uber',desc:'Plataforma gig. Equilibrio entre conductores, usuarios y reguladores.'},
+    {key:'starbucks',icon:'ti-coffee',color:'#0F6E56',name:'Starbucks',desc:'Retail de experiencia. Marca, baristas y clientes leales.'},
+  ];
+  return `
+    <p class="sel-title">Elige tu empresa</p>
+    <div class="selector-grid">
+      ${cos.map(c=>`
+        <div class="sel-card" onclick="startGame('${c.key}')">
+          <div style="font-size:28px;margin-bottom:10px;color:${c.color}"><i class="ti ${c.icon}"></i></div>
+          <div class="sel-name">${c.name}</div>
+          <div class="sel-desc">${c.desc}</div>
+        </div>`).join('')}
+    </div>
+    <p class="hint">5 trimestres · Decisiones únicas por empresa · Puntuación CMI al final</p>`;
+}
+function selectDec(id){state.selected=state.selected===id?null:id;render();}
+function startGame(k){state=initState(k);render();}
+function restartSame(){const k=state.companyKey;state=initState(k);render();}
+function backToSelector(){state=null;render();}
+function render(){
+  document.getElementById('app').innerHTML=
+    !state?renderSelector():state.done?renderGameOver():renderGame();
+}
+render();
+</script>
+</body>
+</html>
